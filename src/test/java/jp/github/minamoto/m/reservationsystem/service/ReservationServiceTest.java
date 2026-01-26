@@ -33,7 +33,7 @@ class ReservationServiceTest {
 
         // then（検証）
         assertThat(result.getId()).isNotNull();
-        assertThat(result.getName()).isEqualTo("テストユーザー失敗");
+        assertThat(result.getName()).isEqualTo("テストユーザー");
         assertThat(result.getStartTime()).isEqualTo(LocalTime.of(9, 0));
     }
 }

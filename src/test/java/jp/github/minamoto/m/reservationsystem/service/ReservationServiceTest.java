@@ -110,6 +110,43 @@ class ReservationServiceTest {
     }
     
     /*
+     * テスト対象：findAllActive 正常系<br>
+     * 入力値：なし<br>
+     * 期待結果：<br>
+     * <ul>
+     *   <li>EntityのListがReservationResponseDtoのListに正しく変換されていること</li>
+     *   <li>返却されるListのサイズが正しいこと</li>
+     *   <li>reservationRepository.findByStatusが1回呼ばれていること</li>
+     * </ul>
+     */
+    @Test
+    void findAllActive() {
+    	// 前提
+		 Reservation r1 = new Reservation();
+	     r1.setId(1L);
+	     r1.setName("ユーザー1");
+	     r1.setStatus(ReservationStatus.ACTIVE);
+	     
+		 Reservation r2 = new Reservation();
+	     r2.setId(2L);
+	     r2.setName("ユーザー2");
+	     r2.setStatus(ReservationStatus.ACTIVE);
+	     
+	     when(reservationRepository.findByStatus(ReservationStatus.ACTIVE))
+	    		 .thenReturn(List.of(r1, r2));
+	     
+	     // 実行
+	     List<ReservationResponseDto> result = reservationService.findAllActive();
+	     
+	     // 検証
+	     assertThat(result).hasSize(2);
+	     assertThat(result.get(0).getStatus()).isEqualTo("ACTIVE");
+	     assertThat(result.get(1).getStatus()).isEqualTo("ACTIVE");
+	     
+	     verify(reservationRepository, times(1)).findByStatus(ReservationStatus.ACTIVE);
+    }
+    
+    /*
      * テスト対象：findById 正常系<br>
      * 入力値：id（Long）<br>
      * 期待結果：<br>
@@ -143,7 +180,7 @@ class ReservationServiceTest {
     }
     
     /*
-     * テスト対象：findById　異常系<br>
+     * テスト対象：findById 異常系<br>
      * 入力値：存在しないid<br>
      * 期待結果：<br>
      * <p>例外としてReservationNotFoundExceptionが投げられること。</p>
@@ -165,5 +202,38 @@ class ReservationServiceTest {
 		});
 		
 		verify(reservationRepository, times(1)).findById(id);
+    }
+    
+
+    /*
+     * テスト対象：cancel 正常系<br>
+     * 入力値：id（Long）<br>
+     * 期待結果：<br>
+     * <ul>
+     *   <li>statusがCANCELLEDになっていること</li>
+     *   <li>reservationRepository.findById(id) が 1回呼ばれていること</li>
+     *   <li>reservationRepository.save(reservation) が 1回呼ばれていること</li>
+     * </ul>
+     */
+    @Test
+    void cancel() {
+    	// 入力値
+    	Long id = 1L;
+    	
+    	// 前提
+    	Reservation reservation = new Reservation();
+    	reservation.setId(1L);
+    	reservation.setStatus(ReservationStatus.ACTIVE);
+    	
+    	when(reservationRepository.findById(id)).thenReturn(Optional.of(reservation));
+    	
+    	// 実行
+    	reservationService.cancel(id);
+    	
+    	// 検証
+    	assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CANCELLED);
+    	
+    	verify(reservationRepository, times(1)).findById(id);
+    	verify(reservationRepository, times(1)).save(reservation);	
     }
 }

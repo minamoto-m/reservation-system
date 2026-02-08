@@ -10,7 +10,7 @@ import jp.github.minamoto.m.reservationsystem.dto.DepartmentResponseDTO;
 import jp.github.minamoto.m.reservationsystem.service.DepartmentService;
 
 @RestController
-@RequestMapping("departments")
+@RequestMapping("/v1/departments")
 public class DepartmentController {
 	private final DepartmentService departmentService;
 	

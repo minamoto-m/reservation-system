@@ -10,7 +10,7 @@ import jp.github.minamoto.m.reservationsystem.dto.DoctorResponseDTO;
 import jp.github.minamoto.m.reservationsystem.service.DoctorService;
 
 @RestController
-@RequestMapping("doctors")
+@RequestMapping("/v1/doctors")
 public class DoctorController {
 	private final DoctorService doctorService;
 	

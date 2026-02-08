@@ -18,7 +18,7 @@ import jp.github.minamoto.m.reservationsystem.entity.Reservation;
 import jp.github.minamoto.m.reservationsystem.service.ReservationService;
 
 @RestController
-@RequestMapping("reservations")
+@RequestMapping("/v1/reservations")
 public class ReservationController {
 	private final ReservationService reservationService;
 	

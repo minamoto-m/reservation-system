@@ -27,7 +27,7 @@ public class DoctorService {
 		DoctorResponseDTO dto = new DoctorResponseDTO();
 		dto.setId(entity.getId());
 		dto.setName(entity.getName());
-		dto.setDepartmentId(null);
+		dto.setDepartmentId(entity.getDepartmentId());
 		
 		return dto;
 	}
@@ -41,5 +41,17 @@ public class DoctorService {
 		List<Doctor> departments = doctorRepository.findAll();
 		
 		return departments.stream().map(this::toDTO).collect(Collectors.toList());
+	}
+
+	/*
+	 * 診療科目IDを指定して医師情報を取得する。
+	 * 
+	 * @param departmentId 診療科目ID
+	 * @return 医師情報レスポンス
+	 */
+	public List<DoctorResponseDTO> findByDepartmentId(Long departmentId) {
+		List<Doctor> doctors = doctorRepository.findByDepartmentId(departmentId);
+
+		return doctors.stream().map(this::toDTO).collect(Collectors.toList());
 	}
 }

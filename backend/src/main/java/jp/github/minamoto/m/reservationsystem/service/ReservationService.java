@@ -1,38 +1,49 @@
 package jp.github.minamoto.m.reservationsystem.service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import jakarta.transaction.Transactional;
 import jp.github.minamoto.m.reservationsystem.domain.ReservationStatus;
-import jp.github.minamoto.m.reservationsystem.dto.ReservationCreateRequestDto;
-import jp.github.minamoto.m.reservationsystem.dto.ReservationResponseDto;
+import jp.github.minamoto.m.reservationsystem.domain.TimeSlotStatus;
+import jp.github.minamoto.m.reservationsystem.dto.ReservationCancelResponseDTO;
+import jp.github.minamoto.m.reservationsystem.dto.ReservationCreateRequestDTO;
+import jp.github.minamoto.m.reservationsystem.dto.ReservationResponseDTO;
 import jp.github.minamoto.m.reservationsystem.entity.Reservation;
+import jp.github.minamoto.m.reservationsystem.entity.TimeSlot;
 import jp.github.minamoto.m.reservationsystem.repository.ReservationRepository;
+import jp.github.minamoto.m.reservationsystem.repository.TimeSlotRepository;
 import jp.github.minamoto.m.reservationsystem.service.exception.ReservationNotFoundException;
 
 @Service
 public class ReservationService {
 	private final ReservationRepository reservationRepository;
+	private final TimeSlotRepository timeSlotRepository;
 
-	public ReservationService(ReservationRepository reservationRepository) {
+	public ReservationService(ReservationRepository reservationRepository, TimeSlotRepository timeSlotRepository) {
 		this.reservationRepository = reservationRepository;
+		this.timeSlotRepository = timeSlotRepository;
 	}
 
 	/*
-	 * Reservationエンティティをレスポンス用DTOに変換する。
+	 * 予約情報エンティティをレスポンス用DTOに変換する。
 	 * 
-	 * @param entity 予約情報を表すReservationエンティティ
+	 * @param entity 予約情報エンティティ
 	 * 
-	 * @return 予約情報を表すReservationResponseDto
+	 * @return 予約レスポンスDTO
 	 */
-	private ReservationResponseDto toDto(Reservation entity) {
-		ReservationResponseDto dto = new ReservationResponseDto();
-		dto.setReservationDate(entity.getReservationDate());
-		dto.setStartTime(entity.getStartTime());
-		dto.setEndTime(entity.getEndTime());
+	private ReservationResponseDTO toResponseDto(Reservation entity) {
+		ReservationResponseDTO dto = new ReservationResponseDTO();
+
+		dto.setReservationId(entity.getId());
+		dto.setTimeSlotId(entity.getTimeSlot().getId());
+
+		dto.setDate(entity.getTimeSlot().getDate());
+		dto.setStartTime(entity.getTimeSlot().getStartTime());
+		dto.setEndTime(entity.getTimeSlot().getEndTime());
+
 		dto.setStatus(entity.getStatus().name());
 		dto.setName(entity.getName());
 
@@ -40,74 +51,125 @@ public class ReservationService {
 	}
 
 	/*
+	 * 予約情報エンティティをキャンセルレスポンス用DTOに変換する。
+	 * 
+	 * @param entity 予約情報エンティティ
+	 * 
+	 * @return レスポンス用の予約情キャンセルレスポンスDTO
+	 */
+	private ReservationCancelResponseDTO toCancelResponseDTO(Reservation entity) {
+		ReservationCancelResponseDTO dto = new ReservationCancelResponseDTO();
+
+		dto.setReservationId(entity.getId());
+		dto.setStatus(entity.getStatus().name());
+
+		return dto;
+	}
+
+	/*
 	 * 予約を作成する。
+	 * 
+	 * TimeSlotをロックして取得
+	 * TimeSlotをCLOSEDに更新
+	 * Reservationの作成
 	 * 
 	 * @param 予約作成リクエストDTO
 	 * @return 作成された予約情報
 	 */
-	public Reservation create(ReservationCreateRequestDto dto) {
-		Reservation r = new Reservation();
-		r.setReservationDate(dto.getReservationDate());
-		r.setStartTime(dto.getStartTime());
-		r.setEndTime(dto.getEndTime());
-		r.setStatus(dto.getStatus());
-		r.setName(dto.getName());
-		r.setPhoneNumber(dto.getPhoneNumber());
-		r.setCreatedAt(LocalDateTime.now());
+	@Transactional
+	public ReservationResponseDTO create(ReservationCreateRequestDTO dto) {
 
-		return reservationRepository.save(r);
+		// 予約枠を取得
+		TimeSlot timeSlot = timeSlotRepository.findById(dto.getTimeSlotId())
+			.orElseThrow(() -> new IllegalArgumentException("TimeSlot not found"));
+		
+		if(timeSlot.getStatus() != TimeSlotStatus.OPEN) {
+			throw new IllegalArgumentException("すでに予約が存在しています。");
+		}
+
+		// 予約枠を予約済みに更新
+		timeSlot.setStatus(TimeSlotStatus.CLOSED);
+
+		// 予約情報の作成
+		Reservation reservation = new Reservation();
+		reservation.setTimeSlot(timeSlot);
+		reservation.setStatus(ReservationStatus.CONFIRMED);
+		reservation.setName(dto.getName());
+		reservation.setPhoneNumber(dto.getPhoneNumber());
+
+		Reservation savedReservation = reservationRepository.save(reservation);
+
+		return toResponseDto(savedReservation);
 	}
+
+	/*
+	 * 予約をキャンセルする。
+	 * 
+	 * <p>DBから予約データは削除せず、statusをCANCELEDに更新する。</p>
+	 * 
+	 * ReservationStatusがCONFIRMEDのもののみ対象
+	 * ReservationStatusをCANCELEDに変更
+	 * TimeSlotStatusをOPENに変更
+	 * 
+	 * @param reservationId 予約ID
+	 * @return キャンセルされた予約情報
+	 */
+	@Transactional
+	public ReservationCancelResponseDTO cancel(Long reservationId) {
+		Reservation reservation = reservationRepository.findById(reservationId)
+				.orElseThrow(() -> new ReservationNotFoundException(reservationId));
+
+		if(reservation.getStatus() != ReservationStatus.CONFIRMED) {
+			throw new IllegalArgumentException("予約をキャンセルできません。");
+		}
+
+		// 予約をキャンセル
+		reservation.setStatus(ReservationStatus.CANCELED);
+
+		// 予約枠を空きに更新
+		TimeSlot timeSlot = reservation.getTimeSlot();
+		timeSlot.setStatus(TimeSlotStatus.OPEN);
+
+		return toCancelResponseDTO(reservation);
+	}
+
 
 	/*
 	 * 予約一覧を取得する。
 	 * 
-	 * @return 予約一覧レスポンス
+	 * @return 予約レスポンスDTOのリスト
 	 */
-	public List<ReservationResponseDto> findAll() {
+	public List<ReservationResponseDTO> findAll() {
 		List<Reservation> reservations = reservationRepository.findAll();
 
-		return reservations.stream().map(this::toDto).collect(Collectors.toList());
+		return reservations.stream().map(this::toResponseDto)
+			.collect(Collectors.toList());
 	}
 
 	/*
-	 * 有効な予約一覧を取得する。
+	 * 予約済みの予約一覧を取得する。
 	 * 
-	 * @return 予約一覧レスポンス
+	 * @return 予約レスポンスDTOのリスト
 	 */
-	public List<ReservationResponseDto> findAllActive() {
-		return reservationRepository.findByStatus(ReservationStatus.ACTIVE).stream().map(this::toDto)
-				.collect(Collectors.toList());
+	public List<ReservationResponseDTO> findAllConfirmed() {
+		return reservationRepository.findByStatus(ReservationStatus.CONFIRMED)
+			.stream().map(this::toResponseDto)
+			.collect(Collectors.toList());
 	}
 
 	/*
 	 * 予約IDを指定して予約情報を取得する。
 	 * 
-	 * <p>指定されたIDの予約が存在しない場合は例外を発生させる。</p>
+	 * <p>指定された予約IDの予約が存在しない場合は例外を発生させる。</p>
 	 * 
-	 * @param id 予約ID
-	 * @return 予約情報のレスポンスDTO
+	 * @param reservationId 予約ID
+	 * @return 予約レスポンスDTO
 	 * @throws ReservationNotFoundException 予約が存在しない場合
 	 */
-	public ReservationResponseDto findById(Long id) {
-		Reservation reservation = reservationRepository.findById(id)
-				.orElseThrow(() -> new ReservationNotFoundException(id));
+	public ReservationResponseDTO findById(Long reservationId) {
+		Reservation reservation = reservationRepository.findById(reservationId)
+				.orElseThrow(() -> new ReservationNotFoundException(reservationId));
 
-		return toDto(reservation);
-	}
-
-	/*
-	 * 予約IDを指定して予約をキャンセルする。
-	 * 
-	 * <p>DBから予約データは削除せず、statusをCANCELLEDに更新する。</p>
-	 * 
-	 * @param id 予約ID
-	 */
-	public void cancel(Long id) {
-		Reservation reservation = reservationRepository.findById(id)
-				.orElseThrow(() -> new ReservationNotFoundException(id));
-
-		reservation.setStatus(ReservationStatus.CANCELLED);
-
-		reservationRepository.save(reservation);
+		return toResponseDto(reservation);
 	}
 }

@@ -12,9 +12,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import jp.github.minamoto.m.reservationsystem.dto.ReservationCreateRequestDto;
-import jp.github.minamoto.m.reservationsystem.dto.ReservationResponseDto;
-import jp.github.minamoto.m.reservationsystem.entity.Reservation;
+import jp.github.minamoto.m.reservationsystem.dto.ReservationCancelResponseDTO;
+import jp.github.minamoto.m.reservationsystem.dto.ReservationCreateRequestDTO;
+import jp.github.minamoto.m.reservationsystem.dto.ReservationResponseDTO;
 import jp.github.minamoto.m.reservationsystem.service.ReservationService;
 
 @RestController
@@ -33,39 +33,40 @@ public class ReservationController {
 	 * @return 作成された予約情報
 	 */
 	@PostMapping
-	public Reservation create(@RequestBody ReservationCreateRequestDto dto) {
+	public ReservationResponseDTO create(@RequestBody ReservationCreateRequestDTO dto) {
 		return reservationService.create(dto);
 	}
 	
 	/*
-	 * 有効な予約一覧を取得する。
+	 * 予約IDを指定して予約をキャンセルする。
 	 * 
-	 * @return 予約一覧レスポンス
+	 * @param reservationId 予約ID
+	 * @return キャンセルされた予約情報
+	 */
+	@PatchMapping("/{reservationId}/cancel")
+	@ResponseStatus(HttpStatus.OK)
+	public ReservationCancelResponseDTO cancel(@PathVariable Long reservationId) {
+		return reservationService.cancel(reservationId);
+	}
+	
+	/*
+	 * 予約済みの予約一覧を取得する。
+	 * 
+	 * @return 予約レスポンスDTOのリスト
 	 */
 	@GetMapping
-	public List<ReservationResponseDto> findAll() {
-		return reservationService.findAllActive();
+	public List<ReservationResponseDTO> findAllConfirmed() {
+		return reservationService.findAllConfirmed();
 	}
 	
 	/*
-	 * 指定されたIDの予約を1件取得する。
+	 * 予約IDを指定して予約情報を取得する。
 	 * 
-	 * @param id 予約ID
-	 * @return 予約情報のレスポンスDTO
+	 * @param reservationId 予約ID
+	 * @return 予約レスポンスDTO
 	 */
-	@GetMapping("/{id}")
-	public ReservationResponseDto findById(@PathVariable Long id) {
-		return reservationService.findById(id);
-	}
-	
-	/*
-	 * 指定されたIDの予約をキャンセルする。
-	 * 
-	 * @param id 予約ID
-	 */
-	@PatchMapping("/{id}/cancel")
-	@ResponseStatus(HttpStatus.NO_CONTENT)
-	public void cancel(@PathVariable Long id) {
-		reservationService.cancel(id);
+	@GetMapping("/{reservationId}")
+	public ReservationResponseDTO findById(@PathVariable Long reservationId) {
+		return reservationService.findById(reservationId);
 	}
 }

@@ -15,3 +15,11 @@ INSERT INTO doctor(name, department_id) VALUES
 ('テストドクター8', 1),
 ('テストドクター9', 1),
 ('テストドクター10', 2);
+
+INSERT INTO time_slot(date, start_time, end_time, doctor_id, status) VALUES
+(CURRENT_DATE, '09:00', '09:30', 1, 'OPEN'),
+(CURRENT_DATE, '09:30', '10:00', 1, 'OPEN'),
+(CURRENT_DATE, '10:00', '10:30', 1, 'OPEN'),
+(CURRENT_DATE, '10:30', '11:00', 1, 'OPEN'),
+(CURRENT_DATE, '09:00', '09:30', 2, 'OPEN'),
+(CURRENT_DATE, '09:30', '10:00', 2, 'OPEN');

@@ -6,13 +6,12 @@ import java.time.LocalTime;
 import lombok.Data;
 
 @Data
-public class ReservationResponseDto {
-		
-	private Long id;
-	private LocalDate reservationDate;
+public class ReservationResponseDTO {
+	private Long reservationId;
+	private Long timeSlotId;
+	private LocalDate date;
 	private LocalTime startTime;
 	private LocalTime endTime;
 	private String status;
 	private String name;
 }
-

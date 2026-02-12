@@ -15,4 +15,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	Optional<Reservation> findById(Long id);
+
+	boolean existsByTimeSlotId(Long timeSlotId);
 }

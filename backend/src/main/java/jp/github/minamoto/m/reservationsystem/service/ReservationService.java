@@ -70,7 +70,7 @@ public class ReservationService {
 	 * 予約を作成する。
 	 * 
 	 * TimeSlotをロックして取得
-	 * TimeSlotをCLOSEDに更新
+	 * TimeSlotをRESERVEDに更新
 	 * Reservationの作成
 	 * 
 	 * @param 予約作成リクエストDTO
@@ -88,7 +88,7 @@ public class ReservationService {
 		}
 
 		// 予約枠を予約済みに更新
-		timeSlot.setStatus(TimeSlotStatus.CLOSED);
+		timeSlot.setStatus(TimeSlotStatus.RESERVED);
 
 		// 予約情報の作成
 		Reservation reservation = new Reservation();

@@ -70,7 +70,7 @@ class ReservationServiceTest {
         // When: 予約を作成する
         ReservationResponseDTO result = reservationService.create(dto);
 
-        // Then: 予約が作成され、レスポンスに正しい内容が含まれる。予約枠は CLOSED になる
+        // Then: 予約が作成され、レスポンスに正しい内容が含まれる。予約枠は RESERVED になる
         assertThat(result.getReservationId()).isEqualTo(1L);
         assertThat(result.getName()).isEqualTo(dto.getName());
         assertThat(result.getTimeSlotId()).isEqualTo(1L);
@@ -79,7 +79,7 @@ class ReservationServiceTest {
         assertThat(result.getEndTime()).isEqualTo(LocalTime.of(9, 30));
         assertThat(result.getStatus()).isEqualTo("CONFIRMED");
 
-        assertThat(timeSlot.getStatus()).isEqualTo(TimeSlotStatus.CLOSED);
+        assertThat(timeSlot.getStatus()).isEqualTo(TimeSlotStatus.RESERVED);
 
         verify(reservationRepository).save(any(Reservation.class));
         verify(timeSlotRepository).findById(1L);
@@ -92,7 +92,7 @@ class ReservationServiceTest {
 
         TimeSlot timeSlot = new TimeSlot();
         timeSlot.setId(1L);
-        timeSlot.setStatus(TimeSlotStatus.CLOSED);
+        timeSlot.setStatus(TimeSlotStatus.RESERVED);
     	
         Reservation reservation = new Reservation();
     	reservation.setId(reservationId);
@@ -112,13 +112,13 @@ class ReservationServiceTest {
 
     @Test
     void create_TimeSlotClosed_throwsIllegalArgumentException() {
-        // Given: 予約枠が予約済み（CLOSED）であり、その枠で予約作成リクエストを送る
+        // Given: 予約枠が予約済み（RESERVED）であり、その枠で予約作成リクエストを送る
         TimeSlot timeSlot = new TimeSlot();
         timeSlot.setId(1L);
         timeSlot.setDate(LocalDate.of(2025, 2, 10));
         timeSlot.setStartTime(LocalTime.of(9, 0));
         timeSlot.setEndTime(LocalTime.of(9, 30));
-        timeSlot.setStatus(TimeSlotStatus.CLOSED);
+        timeSlot.setStatus(TimeSlotStatus.RESERVED);
 
         when(timeSlotRepository.findById(1L)).thenReturn(Optional.of(timeSlot));
 
@@ -185,7 +185,7 @@ class ReservationServiceTest {
         timeSlot1.setDate(LocalDate.of(2025, 2, 10));
         timeSlot1.setStartTime(LocalTime.of(9, 0));
         timeSlot1.setEndTime(LocalTime.of(9, 30));
-        timeSlot1.setStatus(TimeSlotStatus.CLOSED);
+        timeSlot1.setStatus(TimeSlotStatus.RESERVED);
 
         Reservation r1 = new Reservation();
         r1.setId(1L);
@@ -198,14 +198,14 @@ class ReservationServiceTest {
         timeSlot2.setDate(LocalDate.of(2025, 2, 11));
         timeSlot2.setStartTime(LocalTime.of(10, 0));
         timeSlot2.setEndTime(LocalTime.of(10, 30));
-        timeSlot2.setStatus(TimeSlotStatus.CLOSED);
+        timeSlot2.setStatus(TimeSlotStatus.RESERVED);
 
 		 Reservation r2 = new Reservation();
 	     r2.setId(2L);
 	     r2.setName("ユーザー2");
 	     r2.setStatus(ReservationStatus.CONFIRMED);
 	     r2.setTimeSlot(timeSlot2);
-         timeSlot2.setStatus(TimeSlotStatus.CLOSED);
+         timeSlot2.setStatus(TimeSlotStatus.RESERVED);
 	     
 	     when(reservationRepository.findByStatus(ReservationStatus.CONFIRMED))
 	    		 .thenReturn(List.of(r1, r2));
@@ -231,7 +231,7 @@ class ReservationServiceTest {
         timeSlot.setDate(LocalDate.of(2025, 2, 10));
         timeSlot.setStartTime(LocalTime.of(9, 0));
         timeSlot.setEndTime(LocalTime.of(9, 30));
-        timeSlot.setStatus(TimeSlotStatus.CLOSED);
+        timeSlot.setStatus(TimeSlotStatus.RESERVED);
 
     	Reservation reservation = new Reservation();
 		reservation.setId(reservationId);

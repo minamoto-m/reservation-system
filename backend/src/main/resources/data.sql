@@ -1,3 +1,10 @@
+INSERT INTO app_user (username, password, role)
+VALUES (
+    'admin',
+    '{bcrypt}$2y$10$1ekscTTizttCBo0jNB0HhOn9D6z0IVEdvE2deI8L0Hdas37wXuCO6',
+    'ROLE_ADMIN'
+);
+
 INSERT INTO department(name) VALUES
 ('内科'),
 ('外科'),

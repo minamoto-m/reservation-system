@@ -1,19 +1,31 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { departments, doctors, timeSlots } from "@/lib/mock-data"
-import { Calendar, Clock, User, Phone, Stethoscope, CheckCircle2, Building2, ArrowLeft } from "lucide-react"
+import { timeSlots } from "@/lib/mock-data"
+import { departmentApi } from "@/lib/api/department"
+import { doctorApi } from "@/lib/api/doctor"
+import type { Department } from "@/types/department"
+import type { Doctor } from "@/types/doctor"
+import { Calendar, Clock, User, Phone, Stethoscope, CheckCircle2, Building2, ArrowLeft, Loader2 } from "lucide-react"
 import Link from "next/link"
 
 type BookingStep = "department" | "doctor" | "datetime" | "info" | "confirm" | "complete"
 
 export default function BookingPage() {
+  const [departments, setDepartments] = useState<Department[]>([])
+  const [departmentsLoading, setDepartmentsLoading] = useState(true)
+  const [departmentsError, setDepartmentsError] = useState<string | null>(null)
+
+  const [doctors, setDoctors] = useState<Doctor[]>([])
+  const [doctorsLoading, setDoctorsLoading] = useState(false)
+  const [doctorsError, setDoctorsError] = useState<string | null>(null)
+
   const [step, setStep] = useState<BookingStep>("department")
   const [selectedDepartment, setSelectedDepartment] = useState("")
   const [selectedDoctor, setSelectedDoctor] = useState("")
@@ -23,12 +35,31 @@ export default function BookingPage() {
   const [patientPhone, setPatientPhone] = useState("")
   const [notes, setNotes] = useState("")
 
-  const filteredDoctors = useMemo(() => {
-    return doctors.filter((doc) => doc.departmentId === selectedDepartment)
+  useEffect(() => {
+    departmentApi
+      .getAll()
+      .then(setDepartments)
+      .catch((err) => setDepartmentsError(err instanceof Error ? err.message : "読み込みに失敗しました"))
+      .finally(() => setDepartmentsLoading(false))
+  }, [])
+
+  useEffect(() => {
+    if (!selectedDepartment) {
+      setDoctors([])
+      setDoctorsError(null)
+      return
+    }
+    setDoctorsLoading(true)
+    setDoctorsError(null)
+    doctorApi
+      .getByDepartmentId(Number(selectedDepartment))
+      .then(setDoctors)
+      .catch((err) => setDoctorsError(err instanceof Error ? err.message : "医師の読み込みに失敗しました"))
+      .finally(() => setDoctorsLoading(false))
   }, [selectedDepartment])
 
-  const selectedDepartmentData = departments.find((d) => d.id === selectedDepartment)
-  const selectedDoctorData = doctors.find((d) => d.id === selectedDoctor)
+  const selectedDepartmentData = departments.find((d) => String(d.id) === selectedDepartment)
+  const selectedDoctorData = doctors.find((d) => String(d.id) === selectedDoctor)
 
   const today = new Date().toISOString().split("T")[0]
   const maxDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
@@ -130,29 +161,39 @@ export default function BookingPage() {
               <CardDescription>ご希望の診療科をお選びください</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {departments.map((dept) => (
-                  <Button
-                    key={dept.id}
-                    variant={selectedDepartment === dept.id ? "default" : "outline"}
-                    className="h-16 text-base"
-                    onClick={() => {
-                      setSelectedDepartment(dept.id)
-                      setSelectedDoctor("")
-                    }}
-                  >
-                    {dept.name}
-                  </Button>
-                ))}
-              </div>
-              <div className="mt-6 flex justify-end">
-                <Button
-                  onClick={() => setStep("doctor")}
-                  disabled={!selectedDepartment}
-                >
-                  次へ
-                </Button>
-              </div>
+              {departmentsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : departmentsError ? (
+                <p className="text-center text-destructive py-8">{departmentsError}</p>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {departments.map((dept) => (
+                      <Button
+                        key={dept.id}
+                        variant={selectedDepartment === String(dept.id) ? "default" : "outline"}
+                        className="h-16 text-base"
+                        onClick={() => {
+                          setSelectedDepartment(String(dept.id))
+                          setSelectedDoctor("")
+                        }}
+                      >
+                        {dept.name}
+                      </Button>
+                    ))}
+                  </div>
+                  <div className="mt-6 flex justify-end">
+                    <Button
+                      onClick={() => setStep("doctor")}
+                      disabled={!selectedDepartment}
+                    >
+                      次へ
+                    </Button>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         )}
@@ -170,23 +211,32 @@ export default function BookingPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {filteredDoctors.map((doc) => (
-                  <button
-                    key={doc.id}
-                    type="button"
-                    className={`w-full p-4 rounded-lg border text-left transition-colors ${
-                      selectedDoctor === doc.id
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
-                    }`}
-                    onClick={() => setSelectedDoctor(doc.id)}
-                  >
-                    <div className="font-medium text-foreground">{doc.name}</div>
-                    <div className="text-sm text-muted-foreground">{doc.specialization}</div>
-                  </button>
-                ))}
-              </div>
+              {doctorsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : doctorsError ? (
+                <p className="text-center text-destructive py-8">{doctorsError}</p>
+              ) : doctors.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">医師がいません</p>
+              ) : (
+                <div className="space-y-3">
+                  {doctors.map((doc) => (
+                    <button
+                      key={doc.id}
+                      type="button"
+                      className={`w-full p-4 rounded-lg border text-left transition-colors ${
+                        selectedDoctor === String(doc.id)
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/50"
+                      }`}
+                      onClick={() => setSelectedDoctor(String(doc.id))}
+                    >
+                      <div className="font-medium text-foreground">{doc.name}</div>
+                    </button>
+                  ))}
+                </div>
+              )}
               <div className="mt-6 flex justify-between">
                 <Button variant="outline" onClick={goBack}>
                   <ArrowLeft className="h-4 w-4 mr-2" />

@@ -3,6 +3,11 @@ VALUES (
     'admin',
     '{bcrypt}$2y$10$1ekscTTizttCBo0jNB0HhOn9D6z0IVEdvE2deI8L0Hdas37wXuCO6',
     'ROLE_ADMIN'
+),
+(
+    'user',
+    '{bcrypt}$2y$10$H.QtaFhP1sQm5QAzfnDlpuQq5fivxEAZU90mT0.yMk8mNQDrGB7ki',
+    'ROLE_USER'
 );
 
 INSERT INTO department(name) VALUES

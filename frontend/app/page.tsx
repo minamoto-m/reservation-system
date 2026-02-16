@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { Header } from "@/components/header"
+import { ProtectedPage } from "@/components/protected-page"
 import { ReservationForm } from "@/components/reservation-form"
 import { ReservationList } from "@/components/reservation-list"
 import { ReservationCalendar } from "@/components/reservation-calendar"
@@ -62,8 +63,9 @@ export default function ReservationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <ProtectedPage>
+      <div className="min-h-screen bg-background">
+        <Header />
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
         {/* Stats Cards */}
@@ -178,6 +180,7 @@ export default function ReservationPage() {
           <ReservationCalendar reservations={filteredReservations} />
         )}
       </main>
-    </div>
+      </div>
+    </ProtectedPage>
   )
 }

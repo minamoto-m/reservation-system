@@ -35,6 +35,7 @@ function getApiUrl(): string {
     
     const res = await fetch(url, {
       ...options,
+      credentials: 'include',  // HTTP-only Cookie を送受信
       headers: {
         'Content-Type': 'application/json',
         ...options?.headers,
@@ -42,14 +43,23 @@ function getApiUrl(): string {
     });
   
     if (!res.ok) {
+      if (res.status === 401 && typeof window !== 'undefined') {
+        // 未認証時はログインページへリダイレクト
+        window.location.href = '/login';
+        throw new Error('認証が必要です');
+      }
       const errorText = await res.text();
       throw new Error(`API Error ${res.status}: ${errorText}`);
     }
   
-    // 204 No Contentの場合
+    // 204 No Content の場合
     if (res.status === 204) {
       return null as T;
     }
-  
-    return res.json();
+
+    const text = await res.text();
+    if (!text) {
+      return null as T;
+    }
+    return JSON.parse(text) as T;
   }

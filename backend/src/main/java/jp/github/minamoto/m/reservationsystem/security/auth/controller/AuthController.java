@@ -8,6 +8,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -89,5 +91,14 @@ public class AuthController {
 
         response.addHeader("Set-Cookie", cookie.toString());
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * 認証状態を確認する。認証済みの場合のみ 200 を返す。
+     * 未認証の場合は Spring Security が 401 を返す。
+     */
+    @GetMapping("/me")
+    public ResponseEntity<Map<String, String>> me(@AuthenticationPrincipal UserDetails user) {
+        return ResponseEntity.ok(Map.of("username", user.getUsername()));
     }
 }

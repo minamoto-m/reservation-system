@@ -1,9 +1,15 @@
 package jp.github.minamoto.m.reservationsystem.service;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
 import jp.github.minamoto.m.reservationsystem.domain.TimeSlotStatus;
+import jp.github.minamoto.m.reservationsystem.dto.TimeSlotAvailableResponseDTO;
 import jp.github.minamoto.m.reservationsystem.dto.TimeSlotStatusResponseDTO;
 import jp.github.minamoto.m.reservationsystem.entity.TimeSlot;
 import jp.github.minamoto.m.reservationsystem.repository.ReservationRepository;
@@ -55,5 +61,24 @@ public class TimeSlotService {
         timeSlot.setStatus(TimeSlotStatus.OPEN);
 
         return new TimeSlotStatusResponseDTO(timeSlotId, timeSlot.getStatus().name());
+    }
+
+    /**
+     * 日付と医師IDを指定して空き予約枠（OPEN）を取得する。
+     *
+     * @param date 予約希望日
+     * @param doctorId 医師ID
+     * @return 空き予約枠のDTOリスト（timeSlotId, startTime）
+     */
+    public List<TimeSlotAvailableResponseDTO> findAvailable(LocalDate date, Long doctorId) {
+        List<TimeSlot> result = timeSlotRepository
+                .findByDoctorIdAndDateAndStatusOrderByStartTimeAsc(doctorId, date, TimeSlotStatus.OPEN);
+
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+        return result.stream()
+                .map(ts -> new TimeSlotAvailableResponseDTO(
+                        ts.getId(),
+                        ts.getStartTime().format(timeFormatter)))
+                .collect(Collectors.toList());
     }
 }

@@ -30,6 +30,9 @@ public class SecurityConfig {
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.POST, "/v1/auth/login", "/v1/auth/logout",
                         "/api/v1/auth/login", "/api/v1/auth/logout").permitAll()
+                .requestMatchers("/v1/departments/**", "/api/v1/departments/**").permitAll()
+                .requestMatchers("/v1/doctors/**", "/api/v1/doctors/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/v1/timeslots", "/api/v1/timeslots").permitAll()
                 .requestMatchers("/v1/admin/**", "/api/v1/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
         );

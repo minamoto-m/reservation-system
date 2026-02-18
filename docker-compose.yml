@@ -1,10 +1,36 @@
 services:
+  mysql:
+    image: mysql:8.0
+    container_name: reservation-system-mysql
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: reservation_system
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppass
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   backend:
     build:
       context: ./backend
     container_name: reservation-system-backend
     ports:
       - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      MYSQL_URL: jdbc:mysql://mysql:3306/reservation_system?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppass
+    depends_on:
+      mysql:
+        condition: service_healthy
 
   frontend:
     build:
@@ -23,3 +49,7 @@ services:
     depends_on:
       - backend
       - frontend
+
+volumes:
+  mysql_data:
+

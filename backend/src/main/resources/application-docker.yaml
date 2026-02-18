@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${MYSQL_URL}
+    username: ${MYSQL_USER}
+    password: ${MYSQL_PASSWORD}
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema-mysql.sql
+      data-locations: classpath:data-mysql.sql
+      # 再起動時にINSERT重複エラーが出てもアプリ起動を継続
+      continue-on-error: true
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect

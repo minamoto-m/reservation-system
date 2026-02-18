@@ -149,7 +149,7 @@ export default function BookingPage() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-card">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-3xl mx-auto px-4 py-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
               <Stethoscope className="h-5 w-5 text-primary-foreground" />
@@ -159,11 +159,6 @@ export default function BookingPage() {
               <p className="text-sm text-muted-foreground">オンライン予約</p>
             </div>
           </div>
-          <Link href="/">
-            <Button variant="ghost" size="sm" className="text-muted-foreground">
-              管理画面へ
-            </Button>
-          </Link>
         </div>
       </header>
 
@@ -491,7 +486,7 @@ export default function BookingPage() {
                 </Button>
                 <Link href="/">
                   <Button variant="outline" className="w-full bg-transparent">
-                    トップページへ戻る
+                    トップページへ
                   </Button>
                 </Link>
               </div>

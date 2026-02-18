@@ -23,7 +23,7 @@ export default function LoginPage() {
 
     try {
       await authApi.login(username, password)
-      router.push("/")
+      router.push("/admin")
       router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : "ログインに失敗しました")
@@ -53,7 +53,6 @@ export default function LoginPage() {
               <Input
                 id="username"
                 type="text"
-                placeholder="admin"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 autoComplete="username"
@@ -65,7 +64,6 @@ export default function LoginPage() {
               <Input
                 id="password"
                 type="password"
-                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"

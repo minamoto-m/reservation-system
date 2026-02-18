@@ -1,5 +1,10 @@
--- MySQL 用 DDL（Docker / 本番）
-CREATE TABLE app_user (
+DROP TABLE IF EXISTS reservation;
+DROP TABLE IF EXISTS time_slot;
+DROP TABLE IF EXISTS doctor;
+DROP TABLE IF EXISTS department;
+DROP TABLE IF EXISTS app_user;
+
+CREATE TABLE IF NOT EXISTS app_user (
 	id BIGINT AUTO_INCREMENT PRIMARY KEY,
 	username VARCHAR(255) NOT NULL UNIQUE,
 	password VARCHAR(255) NOT NULL,
@@ -11,7 +16,7 @@ CREATE TABLE department (
 	name VARCHAR(100) NOT NULL
 );
 
-CREATE TABLE doctor (
+CREATE TABLE IF NOT EXISTS doctor (
 	id BIGINT AUTO_INCREMENT PRIMARY KEY,
 	name VARCHAR(100) NOT NULL,
 	department_id BIGINT NOT NULL,
@@ -20,7 +25,7 @@ CREATE TABLE doctor (
 		REFERENCES department(id)
 );
 
-CREATE TABLE time_slot (
+CREATE TABLE IF NOT EXISTS time_slot (
 	id BIGINT AUTO_INCREMENT PRIMARY KEY,
 	date DATE NOT NULL,
 	start_time TIME NOT NULL,
@@ -32,7 +37,7 @@ CREATE TABLE time_slot (
 		REFERENCES doctor(id)
 );
 
-CREATE TABLE reservation (
+CREATE TABLE IF NOT EXISTS reservation (
 	id BIGINT AUTO_INCREMENT PRIMARY KEY,
 	time_slot_id BIGINT NOT NULL,
 	status VARCHAR(20) NOT NULL,

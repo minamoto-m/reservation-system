@@ -7,9 +7,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { timeSlots } from "@/lib/mock-data"
 import { departmentApi } from "@/lib/api/department"
 import { doctorApi } from "@/lib/api/doctor"
+import { timeSlotApi, type TimeSlotAvailable } from "@/lib/api/time-slot"
+import { reservationApi, type ReservationResponse } from "@/lib/api/reservation"
 import type { Department } from "@/types/department"
 import type { Doctor } from "@/types/doctor"
 import { Calendar, Clock, User, Phone, Stethoscope, CheckCircle2, Building2, ArrowLeft, Loader2 } from "lucide-react"
@@ -30,10 +31,17 @@ export default function BookingPage() {
   const [selectedDepartment, setSelectedDepartment] = useState("")
   const [selectedDoctor, setSelectedDoctor] = useState("")
   const [selectedDate, setSelectedDate] = useState("")
-  const [selectedTime, setSelectedTime] = useState("")
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlotAvailable | null>(null)
+
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<TimeSlotAvailable[]>([])
+  const [timeSlotsLoading, setTimeSlotsLoading] = useState(false)
+  const [timeSlotsError, setTimeSlotsError] = useState<string | null>(null)
   const [patientName, setPatientName] = useState("")
   const [patientPhone, setPatientPhone] = useState("")
   const [notes, setNotes] = useState("")
+  const [submitLoading, setSubmitLoading] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [createdReservation, setCreatedReservation] = useState<ReservationResponse | null>(null)
 
   useEffect(() => {
     departmentApi
@@ -58,14 +66,45 @@ export default function BookingPage() {
       .finally(() => setDoctorsLoading(false))
   }, [selectedDepartment])
 
+  useEffect(() => {
+    if (!selectedDoctor || !selectedDate) {
+      setAvailableTimeSlots([])
+      setTimeSlotsError(null)
+      setSelectedTimeSlot(null)
+      return
+    }
+    setTimeSlotsLoading(true)
+    setTimeSlotsError(null)
+    timeSlotApi
+      .getAvailable(Number(selectedDoctor), selectedDate)
+      .then(setAvailableTimeSlots)
+      .catch((err) => setTimeSlotsError(err instanceof Error ? err.message : "枠の取得に失敗しました"))
+      .finally(() => setTimeSlotsLoading(false))
+  }, [selectedDoctor, selectedDate])
+
   const selectedDepartmentData = departments.find((d) => String(d.id) === selectedDepartment)
   const selectedDoctorData = doctors.find((d) => String(d.id) === selectedDoctor)
 
   const today = new Date().toISOString().split("T")[0]
   const maxDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
 
-  const handleSubmit = () => {
-    setStep("complete")
+  const handleSubmit = async () => {
+    if (!selectedTimeSlot) return
+    setSubmitLoading(true)
+    setSubmitError(null)
+    try {
+      const result = await reservationApi.create({
+        timeSlotId: selectedTimeSlot.timeSlotId,
+        name: patientName,
+        phoneNumber: patientPhone,
+      })
+      setCreatedReservation(result)
+      setStep("complete")
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "予約の作成に失敗しました")
+    } finally {
+      setSubmitLoading(false)
+    }
   }
 
   const goBack = () => {
@@ -81,10 +120,11 @@ export default function BookingPage() {
     setSelectedDepartment("")
     setSelectedDoctor("")
     setSelectedDate("")
-    setSelectedTime("")
+    setSelectedTimeSlot(null)
     setPatientName("")
     setPatientPhone("")
     setNotes("")
+    setCreatedReservation(null)
   }
 
   const stepIndicator = () => {
@@ -272,18 +312,28 @@ export default function BookingPage() {
                 {selectedDate && (
                   <div className="space-y-2">
                     <Label>予約時間</Label>
-                    <div className="grid grid-cols-4 md:grid-cols-5 gap-2">
-                      {timeSlots.map((time) => (
-                        <Button
-                          key={time}
-                          variant={selectedTime === time ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setSelectedTime(time)}
-                        >
-                          {time}
-                        </Button>
-                      ))}
-                    </div>
+                    {timeSlotsLoading ? (
+                      <div className="flex justify-center py-8">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : timeSlotsError ? (
+                      <p className="text-destructive py-4">{timeSlotsError}</p>
+                    ) : availableTimeSlots.length === 0 ? (
+                      <p className="text-muted-foreground py-4">この日は空き枠がありません</p>
+                    ) : (
+                      <div className="grid grid-cols-4 md:grid-cols-5 gap-2">
+                        {availableTimeSlots.map((slot) => (
+                          <Button
+                            key={slot.timeSlotId}
+                            variant={selectedTimeSlot?.timeSlotId === slot.timeSlotId ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setSelectedTimeSlot(slot)}
+                          >
+                            {slot.startTime}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -294,7 +344,7 @@ export default function BookingPage() {
                 </Button>
                 <Button
                   onClick={() => setStep("info")}
-                  disabled={!selectedDate || !selectedTime}
+                  disabled={!selectedDate || !selectedTimeSlot}
                 >
                   次へ
                 </Button>
@@ -394,7 +444,7 @@ export default function BookingPage() {
                 </div>
                 <div className="flex justify-between py-2 border-b border-border">
                   <span className="text-muted-foreground">予約時間</span>
-                  <span className="font-medium text-foreground">{selectedTime}</span>
+                  <span className="font-medium text-foreground">{selectedTimeSlot?.startTime}</span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-border">
                   <span className="text-muted-foreground">お名前</span>
@@ -411,13 +461,23 @@ export default function BookingPage() {
                   </div>
                 )}
               </div>
+              {submitError && (
+                <p className="mt-4 text-destructive text-sm">{submitError}</p>
+              )}
               <div className="mt-6 flex justify-between">
-                <Button variant="outline" onClick={goBack}>
+                <Button variant="outline" onClick={goBack} disabled={submitLoading}>
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   戻る
                 </Button>
-                <Button onClick={handleSubmit}>
-                  予約を確定する
+                <Button onClick={handleSubmit} disabled={submitLoading}>
+                  {submitLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      予約処理中...
+                    </>
+                  ) : (
+                    "予約を確定する"
+                  )}
                 </Button>
               </div>
             </CardContent>
@@ -439,10 +499,14 @@ export default function BookingPage() {
               <div className="bg-muted/50 rounded-lg p-4 mb-6 text-left">
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <span className="text-muted-foreground">予約番号</span>
-                  <span className="font-medium text-foreground">RES-{Date.now().toString().slice(-8)}</span>
+                  <span className="font-medium text-foreground">
+                    {createdReservation
+                      ? `RES-${String(createdReservation.reservationId).padStart(6, "0")}`
+                      : `RES-${Date.now().toString().slice(-8)}`}
+                  </span>
                   <span className="text-muted-foreground">予約日時</span>
                   <span className="font-medium text-foreground">
-                    {selectedDate && new Date(selectedDate).toLocaleDateString("ja-JP")} {selectedTime}
+                    {selectedDate && new Date(selectedDate).toLocaleDateString("ja-JP")} {selectedTimeSlot?.startTime}
                   </span>
                   <span className="text-muted-foreground">診療科</span>
                   <span className="font-medium text-foreground">{selectedDepartmentData?.name}</span>

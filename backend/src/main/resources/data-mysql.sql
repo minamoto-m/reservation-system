@@ -1,4 +1,3 @@
--- MySQL 用初期データ（data.sql の DATEADD を DATE_ADD に置換）
 INSERT IGNORE INTO app_user (username, password, role)
 VALUES (
     'admin',

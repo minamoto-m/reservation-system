@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { departmentApi } from "@/lib/api/department"
 import { doctorApi } from "@/lib/api/doctor"
 import { timeSlotApi, type TimeSlotAvailable } from "@/lib/api/time-slot"
+import { reservationApi, type ReservationResponse } from "@/lib/api/reservation"
 import type { Department } from "@/types/department"
 import type { Doctor } from "@/types/doctor"
 import { Calendar, Clock, User, Phone, Stethoscope, CheckCircle2, Building2, ArrowLeft, Loader2 } from "lucide-react"
@@ -38,6 +39,9 @@ export default function BookingPage() {
   const [patientName, setPatientName] = useState("")
   const [patientPhone, setPatientPhone] = useState("")
   const [notes, setNotes] = useState("")
+  const [submitLoading, setSubmitLoading] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [createdReservation, setCreatedReservation] = useState<ReservationResponse | null>(null)
 
   useEffect(() => {
     departmentApi
@@ -84,8 +88,23 @@ export default function BookingPage() {
   const today = new Date().toISOString().split("T")[0]
   const maxDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
 
-  const handleSubmit = () => {
-    setStep("complete")
+  const handleSubmit = async () => {
+    if (!selectedTimeSlot) return
+    setSubmitLoading(true)
+    setSubmitError(null)
+    try {
+      const result = await reservationApi.create({
+        timeSlotId: selectedTimeSlot.timeSlotId,
+        name: patientName,
+        phoneNumber: patientPhone,
+      })
+      setCreatedReservation(result)
+      setStep("complete")
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "予約の作成に失敗しました")
+    } finally {
+      setSubmitLoading(false)
+    }
   }
 
   const goBack = () => {
@@ -105,6 +124,7 @@ export default function BookingPage() {
     setPatientName("")
     setPatientPhone("")
     setNotes("")
+    setCreatedReservation(null)
   }
 
   const stepIndicator = () => {
@@ -441,13 +461,23 @@ export default function BookingPage() {
                   </div>
                 )}
               </div>
+              {submitError && (
+                <p className="mt-4 text-destructive text-sm">{submitError}</p>
+              )}
               <div className="mt-6 flex justify-between">
-                <Button variant="outline" onClick={goBack}>
+                <Button variant="outline" onClick={goBack} disabled={submitLoading}>
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   戻る
                 </Button>
-                <Button onClick={handleSubmit}>
-                  予約を確定する
+                <Button onClick={handleSubmit} disabled={submitLoading}>
+                  {submitLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      予約処理中...
+                    </>
+                  ) : (
+                    "予約を確定する"
+                  )}
                 </Button>
               </div>
             </CardContent>
@@ -469,7 +499,11 @@ export default function BookingPage() {
               <div className="bg-muted/50 rounded-lg p-4 mb-6 text-left">
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <span className="text-muted-foreground">予約番号</span>
-                  <span className="font-medium text-foreground">RES-{Date.now().toString().slice(-8)}</span>
+                  <span className="font-medium text-foreground">
+                    {createdReservation
+                      ? `RES-${String(createdReservation.reservationId).padStart(6, "0")}`
+                      : `RES-${Date.now().toString().slice(-8)}`}
+                  </span>
                   <span className="text-muted-foreground">予約日時</span>
                   <span className="font-medium text-foreground">
                     {selectedDate && new Date(selectedDate).toLocaleDateString("ja-JP")} {selectedTimeSlot?.startTime}

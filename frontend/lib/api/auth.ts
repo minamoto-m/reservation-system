@@ -14,6 +14,18 @@ export const authApi = {
   },
 
   /**
+   * 認証状態を取得。ログイン中ならユーザー情報、未ログインなら null。リダイレクトしない。
+   */
+  getCurrentUser: async (): Promise<AuthUser | null> => {
+    const baseUrl = getApiUrl();
+    const res = await fetch(`${baseUrl}/v1/auth/me`, { credentials: 'include' });
+    if (res.status === 401) return null;
+    if (!res.ok) return null;
+    const data = await res.json() as AuthUser;
+    return data;
+  },
+
+  /**
    * ログイン（JWT は HTTP-only Cookie で設定される）
    */
   login: async (username: string, password: string): Promise<void> => {

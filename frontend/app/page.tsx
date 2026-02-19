@@ -1,13 +1,27 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Stethoscope, Calendar } from "lucide-react"
+import { Stethoscope, Calendar, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { authApi } from "@/lib/api/auth"
 
 /**
  * クリニックトップページ（将来的に案内・アクセス等を表示）
  */
 export default function ClinicTopPage() {
+  const [user, setUser] = useState<{ username: string } | null | undefined>(undefined)
+
+  useEffect(() => {
+    authApi.getCurrentUser().then(setUser)
+  }, [])
+
+  const handleLogout = async () => {
+    await authApi.logout()
+    setUser(null)
+    window.location.href = "/"
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b bg-card">
@@ -22,12 +36,28 @@ export default function ClinicTopPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Link href="/login">
-              <Button variant="ghost" size="sm">ログイン</Button>
-            </Link>
-            <Link href="/mypage">
-              <Button variant="ghost" size="sm">マイページ</Button>
-            </Link>
+            {user === undefined ? (
+              <span className="text-sm text-muted-foreground">...</span>
+            ) : user ? (
+              <>
+                <Link href="/mypage">
+                  <Button variant="ghost" size="sm">マイページ</Button>
+                </Link>
+                <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-1">
+                  <LogOut className="h-4 w-4" />
+                  ログアウト
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button variant="ghost" size="sm">ログイン</Button>
+                </Link>
+                <Link href="/mypage">
+                  <Button variant="ghost" size="sm">マイページ</Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>

@@ -11,7 +11,7 @@ export default function ClinicTopPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b bg-card">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
               <Stethoscope className="h-5 w-5 text-primary-foreground" />
@@ -20,6 +20,14 @@ export default function ClinicTopPage() {
               <h1 className="text-lg font-semibold text-foreground">メディカルクリニック</h1>
               <p className="text-sm text-muted-foreground">地域のかかりつけ医</p>
             </div>
+          </div>
+          <div className="flex gap-2">
+            <Link href="/login">
+              <Button variant="ghost" size="sm">ログイン</Button>
+            </Link>
+            <Link href="/mypage">
+              <Button variant="ghost" size="sm">マイページ</Button>
+            </Link>
           </div>
         </div>
       </header>

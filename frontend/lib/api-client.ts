@@ -1,7 +1,7 @@
 /**
  * API Base URLを環境に応じて取得
  */
-function getApiUrl(): string {
+export function getApiUrl(): string {
     // サーバーサイド（SSR）での実行
     if (typeof window === 'undefined') {
       // Docker内部のURL
@@ -43,13 +43,16 @@ function getApiUrl(): string {
     });
   
     if (!res.ok) {
-      if (res.status === 401 && typeof window !== 'undefined') {
-        // 未認証時はログインページへリダイレクト
-        window.location.href = '/login';
-        throw new Error('認証が必要です');
-      }
       const errorText = await res.text();
-      throw new Error(`API Error ${res.status}: ${errorText}`);
+      if (res.status === 401 && typeof window !== 'undefined') {
+        // ログイン/ログアウト自体の 401（認証失敗）ではリダイレクトしない（エラーを画面に表示するため）
+        const isAuthEndpoint = endpoint.includes('/auth/login') || endpoint.includes('/auth/logout');
+        if (!isAuthEndpoint) {
+          window.location.href = '/login';
+        }
+        throw new Error(errorText || '認証が必要です');
+      }
+      throw new Error(errorText || `API Error ${res.status}`);
     }
   
     // 204 No Content の場合

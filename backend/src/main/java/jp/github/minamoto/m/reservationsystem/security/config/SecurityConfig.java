@@ -8,8 +8,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.factory.PasswordEncoderFactories;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
@@ -28,8 +26,9 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable());
 
         http.authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.POST, "/v1/auth/login", "/v1/auth/logout",
-                        "/api/v1/auth/login", "/api/v1/auth/logout").permitAll()
+                .requestMatchers(HttpMethod.OPTIONS, "/v1/auth/**", "/api/v1/auth/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/v1/auth/login", "/v1/auth/logout", "/v1/auth/register",
+                        "/api/v1/auth/login", "/api/v1/auth/logout", "/api/v1/auth/register").permitAll()
                 .requestMatchers("/v1/departments/**", "/api/v1/departments/**").permitAll()
                 .requestMatchers("/v1/doctors/**", "/api/v1/doctors/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/v1/timeslots", "/api/v1/timeslots").permitAll()
@@ -48,10 +47,5 @@ public class SecurityConfig {
                 .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)));
 
         return http.build();
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
 }

@@ -20,7 +20,9 @@ import java.util.Map;
 import jakarta.servlet.http.HttpServletResponse;
 
 import jp.github.minamoto.m.reservationsystem.security.auth.dto.LoginRequest;
+import jp.github.minamoto.m.reservationsystem.security.auth.dto.RegisterRequest;
 import jp.github.minamoto.m.reservationsystem.security.auth.jwt.JwtService;
+import jp.github.minamoto.m.reservationsystem.security.auth.service.AppUserService;
 
 @RestController
 @RequestMapping("/v1/auth")
@@ -29,16 +31,18 @@ public class AuthController {
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
     private final PasswordEncoder passwordEncoder;
+    private final AppUserService appUserService;
     private final String cookieName;
     private final int cookieMaxAge;
 
     public AuthController(JwtService jwtService, UserDetailsService userDetailsService,
-            PasswordEncoder passwordEncoder,
+            PasswordEncoder passwordEncoder, AppUserService appUserService,
             @Value("${app.jwt.cookie-name:token}") String cookieName,
             @Value("${app.jwt.max-age-seconds:86400}") int cookieMaxAge) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
         this.passwordEncoder = passwordEncoder;
+        this.appUserService = appUserService;
         this.cookieName = cookieName;
         this.cookieMaxAge = cookieMaxAge;
     }
@@ -100,5 +104,16 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<Map<String, String>> me(@AuthenticationPrincipal UserDetails user) {
         return ResponseEntity.ok(Map.of("username", user.getUsername()));
+    }
+
+    /**
+     * ユーザー登録を行う。
+     * @param request ユーザー登録リクエストDTO
+     * @return ユーザー登録レスポンスDTO
+     */
+    @PostMapping("/register")
+    public ResponseEntity<Void> register(@RequestBody RegisterRequest request) {
+        appUserService.create(request);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -9,10 +9,20 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import jp.github.minamoto.m.reservationsystem.service.exception.EmailAlreadyRegisteredException;
 import jp.github.minamoto.m.reservationsystem.service.exception.ReservationNotFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+	@ExceptionHandler(EmailAlreadyRegisteredException.class)
+	@ResponseStatus(HttpStatus.CONFLICT)
+	public Map<String, String> handleEmailAlreadyRegistered(EmailAlreadyRegisteredException ex) {
+		return Map.of(
+			"error", "EMAIL_ALREADY_REGISTERED",
+			"message", ex.getMessage()
+		);
+	}
 
 	@ExceptionHandler(ReservationNotFoundException.class)
 	@ResponseStatus(HttpStatus.NOT_FOUND)

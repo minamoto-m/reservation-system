@@ -16,6 +16,8 @@ import jp.github.minamoto.m.reservationsystem.entity.TimeSlot;
 import jp.github.minamoto.m.reservationsystem.repository.ReservationRepository;
 import jp.github.minamoto.m.reservationsystem.repository.TimeSlotRepository;
 import jp.github.minamoto.m.reservationsystem.service.exception.ReservationNotFoundException;
+import jp.github.minamoto.m.reservationsystem.service.exception.TimeSlotAlreadyTakenException;
+import jp.github.minamoto.m.reservationsystem.service.exception.TimeSlotNotFoundException;
 
 @Service
 public class ReservationService {
@@ -81,10 +83,10 @@ public class ReservationService {
 
 		// 予約枠を取得
 		TimeSlot timeSlot = timeSlotRepository.findById(dto.getTimeSlotId())
-			.orElseThrow(() -> new IllegalArgumentException("TimeSlot not found"));
+			.orElseThrow(() -> new TimeSlotNotFoundException(dto.getTimeSlotId()));
 		
 		if(timeSlot.getStatus() != TimeSlotStatus.OPEN) {
-			throw new IllegalArgumentException("すでに予約が存在しています。");
+			throw new TimeSlotAlreadyTakenException("すでに予約が存在しています。");
 		}
 
 		// 予約枠を予約済みに更新

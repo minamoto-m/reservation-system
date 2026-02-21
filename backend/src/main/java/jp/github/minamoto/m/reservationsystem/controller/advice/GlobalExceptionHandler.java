@@ -42,7 +42,7 @@ public class GlobalExceptionHandler {
             .status(HttpStatus.CONFLICT)
             .body(Map.of(
                 "error", "TIME_SLOT_ALREADY_TAKEN",
-                "message", "予約枠がすでに埋まっています"
+                "message", "すでに予約が存在しています。"
             ));
     }
 

@@ -10,9 +10,9 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2 } from "lucide-react"
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const router = useRouter()
-  const [username, setUsername] = useState("")
+  const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -23,11 +23,11 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      await authApi.login(username, password)
-      router.push("/mypage")
+      await authApi.register(email, password)
+      router.push("/login")
       router.refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "ログインに失敗しました")
+      setError(err instanceof Error ? err.message : "登録に失敗しました")
     } finally {
       setLoading(false)
     }
@@ -37,9 +37,9 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">ログイン</CardTitle>
+          <CardTitle className="text-2xl">会員登録</CardTitle>
           <CardDescription>
-            メールアドレスとパスワードでログインしてください
+            メールアドレスとパスワードでアカウントを作成してください
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -50,13 +50,13 @@ export default function LoginPage() {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="username">メールアドレス</Label>
+              <Label htmlFor="email">メールアドレス</Label>
               <Input
-                id="username"
+                id="email"
                 type="email"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                autoComplete="username"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
                 placeholder="example@example.com"
                 required
               />
@@ -68,7 +68,7 @@ export default function LoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
+                autoComplete="new-password"
                 required
               />
             </div>
@@ -76,16 +76,16 @@ export default function LoginPage() {
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ログイン中...
+                  登録中...
                 </>
               ) : (
-                "ログイン"
+                "登録する"
               )}
             </Button>
             <p className="text-center text-sm text-muted-foreground">
-              アカウントをお持ちでない方は
-              <Link href="/register" className="ml-1 text-primary underline hover:no-underline">
-                会員登録
+              すでにアカウントをお持ちの方は
+              <Link href="/login" className="ml-1 text-primary underline hover:no-underline">
+                ログイン
               </Link>
             </p>
           </form>

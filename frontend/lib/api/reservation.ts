@@ -29,4 +29,21 @@ export const reservationApi = {
       body: JSON.stringify(request),
     });
   },
+
+  /**
+   * 予約一覧を取得する（CONFIRMED のもの）
+   */
+  list: async (): Promise<ReservationResponse[]> => {
+    return fetchApi<ReservationResponse[]>('/v1/reservations');
+  },
+
+  /**
+   * 予約をキャンセルする
+   */
+  cancel: async (reservationId: number): Promise<{ reservationId: number; status: string }> => {
+    return fetchApi<{ reservationId: number; status: string }>(
+      `/v1/reservations/${reservationId}/cancel`,
+      { method: 'PATCH' }
+    );
+  },
 };

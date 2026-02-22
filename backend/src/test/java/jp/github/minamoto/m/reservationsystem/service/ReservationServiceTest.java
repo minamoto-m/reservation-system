@@ -28,6 +28,8 @@ import jp.github.minamoto.m.reservationsystem.entity.TimeSlot;
 import jp.github.minamoto.m.reservationsystem.repository.ReservationRepository;
 import jp.github.minamoto.m.reservationsystem.repository.TimeSlotRepository;
 import jp.github.minamoto.m.reservationsystem.service.exception.ReservationNotFoundException;
+import jp.github.minamoto.m.reservationsystem.service.exception.TimeSlotAlreadyTakenException;
+import jp.github.minamoto.m.reservationsystem.service.exception.TimeSlotNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
 class ReservationServiceTest {
@@ -111,7 +113,29 @@ class ReservationServiceTest {
     }
 
     @Test
-    void create_TimeSlotClosed_throwsIllegalArgumentException() {
+    void create_TimeSlotNotExists_TimeSlotNotFoundException() {
+        // Given: 存在しない予約枠IDを指定する
+        Long timeSlotId = 999L;
+
+        when(timeSlotRepository.findById(timeSlotId)).thenReturn(Optional.empty());
+
+        ReservationCreateRequestDTO dto = new ReservationCreateRequestDTO();
+        dto.setTimeSlotId(timeSlotId);
+        dto.setName("テストユーザー");
+        dto.setPhoneNumber("09012345678");
+
+        // When: 予約を作成する
+        // Then: TimeSlotNotFoundException がスローされ、予約は保存されない
+        assertThrows(TimeSlotNotFoundException.class, () -> {
+            reservationService.create(dto);
+        });
+
+        verify(timeSlotRepository).findById(timeSlotId);
+        verify(reservationRepository, never()).save(any(Reservation.class));
+    }
+
+    @Test
+    void create_TimeSlotClosed_TimeSlotAlreadyTakenException() {
         // Given: 予約枠が予約済み（RESERVED）であり、その枠で予約作成リクエストを送る
         TimeSlot timeSlot = new TimeSlot();
         timeSlot.setId(1L);
@@ -128,8 +152,8 @@ class ReservationServiceTest {
         dto.setPhoneNumber("09012345678");
 
         // When: 予約を作成する
-        // Then: IllegalArgumentException がスローされ、予約は保存されない
-        assertThrows(IllegalArgumentException.class, () -> {
+        // Then: TimeSlotAlreadyTakenException がスローされ、予約は保存されない
+        assertThrows(TimeSlotAlreadyTakenException.class, () -> {
             reservationService.create(dto);
         });
 
